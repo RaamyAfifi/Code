@@ -25,7 +25,6 @@ public class JabberPoint {
 	/** The main program */
 	public static void main(String[] argv)
 	{
-		Style.createStyles();
 		Presentation presentation = new Presentation();
 		new SlideViewerFrame("Jabberpoint 1.6 - OU version ", presentation);
 		try

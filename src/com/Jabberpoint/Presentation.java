@@ -1,16 +1,31 @@
 package com.Jabberpoint;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class Presentation {
     private String showTitle; //The title of the presentation
     private ArrayList<Slide> showList; //An ArrayList with slides
     private int currentSlideNumber = 0; //The number of the current slide
-    private SlideViewerComponent slideViewComponent; //The view component of the slides
+
+    private List<PresentationObserver> observers = new ArrayList<>();
+
+    public void addObserver(PresentationObserver observer)
+    {
+        observers.add(observer);
+    }
+    public void removeObserver(PresentationObserver observer){
+        observers.remove(observer);
+    }
+
+    public void notifyObservers(){
+        for(PresentationObserver observer : observers){
+            observer.onSlideChanged(this, getCurrentSlide());
+        }
+    }
 
     public Presentation()
     {
-        slideViewComponent = null;
         clear();
     }
 
@@ -34,10 +49,6 @@ public class Presentation {
         showTitle = nt;
     }
 
-    public void setShowView(SlideViewerComponent slideViewerComponent)
-    {
-        this.slideViewComponent = slideViewerComponent;
-    }
 
     //Returns the number of the current slide
     public int getSlideNumber()
@@ -50,11 +61,7 @@ public class Presentation {
     {
         if( number >= 0 && number < showList.size() ){
             currentSlideNumber = number;
-
-            if (slideViewComponent != null)
-            {
-                slideViewComponent.update(this, getCurrentSlide());
-            }
+            notifyObservers();
         }
     }
 
@@ -80,7 +87,7 @@ public class Presentation {
     public void clear()
     {
         showList = new ArrayList<Slide>();
-        setSlideNumber(-1);
+        currentSlideNumber = -1;
     }
 
     //Add a slide to the presentation
@@ -104,8 +111,4 @@ public class Presentation {
         return getSlide(currentSlideNumber);
     }
 
-    public void exit(int n)
-    {
-        System.exit(n);
-    }
 }

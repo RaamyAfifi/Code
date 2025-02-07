@@ -19,8 +19,8 @@ import javax.swing.JFrame;
  * @version 1.6 2014/05/16 Sylvia Stuurman
  */
 
-public class SlideViewerComponent extends JComponent {
-		
+public class SlideViewerComponent extends JComponent implements PresentationObserver {
+
 	private Slide slide; //The current slide
 	private Font labelFont; //The font for labels
 	private Presentation presentation; //The presentation
@@ -36,10 +36,11 @@ public class SlideViewerComponent extends JComponent {
 
 	public SlideViewerComponent(Presentation pres, JFrame frame)
 	{
-		setBackground(BGCOLOR); 
+		setBackground(BGCOLOR);
 		presentation = pres;
 		labelFont = new Font(FONTNAME, FONTSTYLE, FONTHEIGHT);
 		this.frame = frame;
+		pres.addObserver(this);
 	}
 
 	public Dimension getPreferredSize()
@@ -47,19 +48,7 @@ public class SlideViewerComponent extends JComponent {
 		return new Dimension(Slide.WIDTH, Slide.HEIGHT);
 	}
 
-	public void update(Presentation presentation, Slide data)
-	{
-		if (data == null) {
-			repaint();
-			return;
-		}
-		this.presentation = presentation;
-		this.slide = data;
-		repaint();
-		frame.setTitle(presentation.getTitle());
-	}
-
-//Draw the slide
+	//Draw the slide
 	public void paintComponent(Graphics g)
 	{
 		g.setColor(BGCOLOR);
@@ -73,5 +62,14 @@ public class SlideViewerComponent extends JComponent {
 		g.drawString("Slide " + (1 + presentation.getSlideNumber()) + " of " + presentation.getSize(), XPOS, YPOS);
 		Rectangle area = new Rectangle(0, YPOS, getWidth(), (getHeight() - YPOS));
 		slide.draw(g, area, this);
+	}
+
+	@Override
+	public void onSlideChanged(Presentation presentation, Slide currentSlide)
+	{
+		this.presentation = presentation;
+		this.slide = currentSlide;
+		repaint();
+		frame.setTitle(presentation.getTitle());
 	}
 }

@@ -53,6 +53,6 @@ public class FileMenu extends DropDownMenu
         });
         this.menu.addSeparator();
         this.menu.add(menuItem = mkMenuItem("Exit"));
-        menuItem.addActionListener(actionEvent -> presentation.exit(0));
+        menuItem.addActionListener(actionEvent -> {System.exit(0);});
     }
 }

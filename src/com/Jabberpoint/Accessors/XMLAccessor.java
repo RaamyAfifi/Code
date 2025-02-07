@@ -35,41 +35,17 @@ import org.w3c.dom.NodeList;
 
 public class XMLAccessor extends Accessor
 {
-    private String getTitle(Element element, String tagName)
-	{
-    	NodeList titles = element.getElementsByTagName(tagName);
-    	return titles.item(0).getTextContent();
-    	
-    }
-
 	public void loadFile(Presentation presentation, String filename) throws IOException
 	{
-		int slideNumber, itemNumber, max = 0, maxItems = 0;
 		try
 		{
-			DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();    
+			DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 			Document document = builder.parse(new File(filename)); //Create a JDOM document
 			Element doc = document.getDocumentElement();
 			presentation.setTitle(getTitle(doc, "showtitle"));
+			loadSlides(doc, presentation);
 
-			NodeList slides = doc.getElementsByTagName("slide");
-			ArrayList<Slide> slidesList = new ArrayList<>();
-			max = slides.getLength();
-			for (slideNumber = 0; slideNumber < max; slideNumber++)
-			{
-				Element xmlSlide = (Element) slides.item(slideNumber);
-				Slide slide = new Slide();
-				slide.setTitle(getTitle(xmlSlide, "title"));
-				presentation.append(slide);
-				NodeList slideItems = xmlSlide.getElementsByTagName("item");
-				maxItems = slideItems.getLength();
-				for (itemNumber = 0; itemNumber < maxItems; itemNumber++)
-				{
-					Element item = (Element) slideItems.item(itemNumber);
-					loadSlideItem(slide, item);
-				}
-			}
-		} 
+		}
 		catch (IOException iox) {
 			System.err.println(iox.toString());
 		}
@@ -78,36 +54,51 @@ public class XMLAccessor extends Accessor
 		}
 		catch (ParserConfigurationException pcx) {
 			System.err.println("Parser Configuration Exception");
-		}	
+		}
 	}
 
-	protected void loadSlideItem(Slide slide, Element item)
+    private String getTitle(Element element, String tagName)
 	{
-		int level = 1; // default
-		NamedNodeMap attributes = item.getAttributes();
-		String leveltext = attributes.getNamedItem("level").getTextContent();
-		if (leveltext != null)
-		{
-			try
-			{
-				level = Integer.parseInt(leveltext);
-			}
-			catch(NumberFormatException x) {
-				System.err.println("Number Format Exception");
-			}
+    	NodeList titles = element.getElementsByTagName(tagName);
+    	return titles.item(0).getTextContent();
+
+    }
+
+	public void loadSlides(Element doc, Presentation presentation){
+		NodeList slides = doc.getElementsByTagName("slide");
+		for(int i = 0; i < slides.getLength();  i++ ){
+			Element xmlSlide = (Element) slides.item(i);
+			Slide slide = new Slide();
+			slide.setTitle(getTitle(xmlSlide, "title"));
+			loadSlideItems(xmlSlide, slide);
+			presentation.append(slide);
 		}
-		String type = attributes.getNamedItem("kind").getTextContent();
+	}
+
+	public void loadSlideItems (Element xmlSlide, Slide slide){
+		NodeList slideItems = xmlSlide.getElementsByTagName("item");
+		for(int i = 0; i < slideItems.getLength();  i++ ){
+			Element item = (Element) slideItems.item(i);
+			slide.append(createSlideItem(item));
+		}
+	}
+
+	public SlideItem createSlideItem(Element item){
+		int level = Integer.parseInt(item.getAttribute("level"));
+		String type = item.getAttribute("kind");
+		String content = item.getTextContent();
 		if ("text".equals(type)) {
-			slide.append(new TextItem(level, item.getTextContent()));
+			return new TextItem(level, content);
 		}
 		else {
 			if ("image".equals(type)) {
-				slide.append(new BitmapItem(level, item.getTextContent()));
+				return new BitmapItem(level, content);
 			}
 			else {
-				System.err.println("Unknown Element type");
+				throw new IllegalArgumentException("Unsupported type: " + type);
 			}
 		}
+
 	}
 
 	public void saveFile(Presentation presentation, String filename) throws IOException
@@ -126,7 +117,7 @@ public class XMLAccessor extends Accessor
 			Vector<SlideItem> slideItems = slide.getSlideItems();
 			for (int itemNumber = 0; itemNumber<slideItems.size(); itemNumber++) {
 				SlideItem slideItem = (SlideItem) slideItems.elementAt(itemNumber);
-				out.print("<item kind="); 
+				out.print("<item kind=");
 				if (slideItem instanceof TextItem) {
 					out.print("\"text\" level=\"" + slideItem.getLevel() + "\">");
 					out.print( ( (TextItem) slideItem).getText());
